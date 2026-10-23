@@ -1,0 +1,353 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Window = WindUI:CreateWindow({
+    Title = "KUY Hub",
+    Icon = "", -- lucide icon. optional
+    Author = "by .ftgs and .ftgs", -- optional
+    
+OpenButton = {
+    Title = "KUY HUB Open",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0,16),
+    StrokeThickness = 2,
+    Color = ColorSequence.new( -- gradient
+        Color3.fromHex("FF0F7B"), 
+        Color3.fromHex("F89B29")
+    ),
+    OnlyMobile = false,
+    Enabled = true,
+    Draggable = true,
+}
+
+})
+local Tab = Window:Tab({
+    Title = "esp",
+    Icon = "bird", -- optional
+    Locked = false,
+})
+
+Tab:Select() -- Select Tab
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Object names
+local MachineNames = {
+    "Generator",
+}
+
+local ItemNames = {
+    "Item",
+    "Tape",
+    "ยังไม่มี",
+    "ยังไม่มี",
+    "ยังไม่มี",
+    "ยังไม่มี",
+}
+
+-- ESP configuration
+local Config = {
+    Monster = true,
+    Machine = true,
+    Item = true,
+}
+
+local Colors = {
+    Monster = Color3.fromRGB(255, 40, 55),
+    Machine = Color3.fromRGB(0, 190, 255),
+    Item = Color3.fromRGB(255, 255, 255),
+}
+
+local Highlights = {}
+
+local function matches(name, names)
+    for _, target in ipairs(names) do
+        if name == target then
+            return true
+        end
+    end
+    return false
+end
+
+local function getType(obj)
+    if not obj:IsA("Model") then
+        if obj:IsA("BasePart") then
+            if matches(obj.Name, MachineNames) then
+                return "Machine"
+            end
+
+            if matches(obj.Name, ItemNames) then
+                return "Item"
+            end
+        end
+
+        return nil
+    end
+
+    if Players:GetPlayerFromCharacter(obj) then
+        return nil
+    end
+
+    if matches(obj.Name, MachineNames) then
+        return "Machine"
+    end
+
+    if matches(obj.Name, ItemNames) then
+        return "Item"
+    end
+
+    if obj:FindFirstChildOfClass("Humanoid") then
+        return "Monster"
+    end
+
+    return nil
+end
+
+local function addESP(obj)
+    local kind = getType(obj)
+
+    if not kind or Highlights[obj] then
+        return
+    end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "WindUI_ESP"
+    highlight.Adornee = obj
+    highlight.FillTransparency = 1
+    highlight.OutlineTransparency = 0
+    highlight.OutlineColor = Colors[kind]
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Enabled = Config[kind]
+    highlight.Parent = Workspace
+
+    Highlights[obj] = highlight
+end
+
+local function setESP(kind, enabled)
+    Config[kind] = enabled
+
+    for obj, highlight in pairs(Highlights) do
+        if highlight.Parent and obj.Parent then
+            if getType(obj) == kind then
+                highlight.Enabled = enabled
+            end
+        end
+    end
+
+    if enabled then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            addESP(obj)
+        end
+    end
+end
+
+local function scan()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        addESP(obj)
+    end
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    task.wait(0.2)
+
+    if obj.Parent then
+        addESP(obj)
+    end
+end)
+
+Workspace.DescendantRemoving:Connect(function(obj)
+    local highlight = Highlights[obj]
+
+    if highlight then
+        highlight:Destroy()
+        Highlights[obj] = nil
+    end
+end)
+
+-- Initial scan
+scan()
+
+-- Add toggles to your existing WindUI Tab
+Tab:Toggle({
+    Title = "Monster ESP",
+    Default = true,
+    Callback = function(value)
+        setESP("Monster", value)
+    end,
+})
+
+Tab:Toggle({
+    Title = "Machine ESP",
+    Default = true,
+    Callback = function(value)
+        setESP("Machine", value)
+    end,
+})
+
+Tab:Toggle({
+    Title = "Item ESP",
+    Default = true,
+    Callback = function(value)
+        setESP("Item", value)
+    end,
+})
+
+local Tab2 = Window:Tab({
+    Title = "รันสคิบภายนอก",
+    Icon = "eye",
+    Locked = false,
+})
+
+Tab2:Select()
+
+Tab2:Button({
+    Title = "รันสคริปต์",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Team-Noxious/Roblox/refs/heads/main/Loader.lua"))({load = "Glisten's Strip Club"})
+    end
+})
+
+local DevTab = Window:Tab({
+    Title = "KUY HUB",
+    Icon = "users",
+    Locked = false,
+})
+
+DevTab:Paragraph({
+    Title = "Developer Team",
+    Desc = "คนเขียน script gpt เเละ gemini",
+})
+
+DevTab:Select()
+
+
+-- TAB 3: GRAPHICS BOOST
+local Tab3 = Window:Tab({
+    Title = "Graphics",
+    Icon = "zap",
+    Locked = false,
+})
+
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local original = {
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows,
+    Brightness = Lighting.Brightness,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+}
+
+local fogEnabled = false
+local lightEnabled = false
+local fpsEnabled = false
+
+-- ลบหมอก
+Tab3:Toggle({
+    Title = "Remove Fog",
+    Default = false,
+    Callback = function(state)
+        fogEnabled = state
+
+        if state then
+            Lighting.FogStart = 0
+            Lighting.FogEnd = 1000000
+
+            for _, obj in ipairs(Lighting:GetChildren()) do
+                if obj:IsA("Atmosphere") then
+                    obj:SetAttribute(
+                        "GraphicsOriginalDensity",
+                        obj.Density
+                    )
+                    obj:SetAttribute(
+                        "GraphicsOriginalHaze",
+                        obj.Haze
+                    )
+                    obj.Density = 0
+                    obj.Haze = 0
+                end
+            end
+        else
+            Lighting.FogStart = original.FogStart
+            Lighting.FogEnd = original.FogEnd
+
+            for _, obj in ipairs(Lighting:GetChildren()) do
+                if obj:IsA("Atmosphere") then
+                    local density = obj:GetAttribute(
+                        "GraphicsOriginalDensity"
+                    )
+                    local haze = obj:GetAttribute(
+                        "GraphicsOriginalHaze"
+                    )
+
+                    if density ~= nil then
+                        obj.Density = density
+                        obj:SetAttribute(
+                            "GraphicsOriginalDensity", nil
+                        )
+                    end
+
+                    if haze ~= nil then
+                        obj.Haze = haze
+                        obj:SetAttribute(
+                            "GraphicsOriginalHaze", nil
+                        )
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- เพิ่มแสง
+Tab3:Toggle({
+    Title = "Extra Brightness",
+    Default = false,
+    Callback = function(state)
+        lightEnabled = state
+
+        if state then
+            Lighting.Brightness = 3
+            Lighting.GlobalShadows = false
+            Lighting.Ambient = Color3.fromRGB(190, 190, 190)
+            Lighting.OutdoorAmbient = Color3.fromRGB(210, 210, 210)
+        else
+            Lighting.Brightness = original.Brightness
+            Lighting.GlobalShadows = original.GlobalShadows
+            Lighting.Ambient = original.Ambient
+            Lighting.OutdoorAmbient = original.OutdoorAmbient
+        end
+    end
+})
+
+-- ลดรายละเอียดเอฟเฟกต์เพื่อช่วย FPS
+Tab3:Toggle({
+    Title = "FPS Boost",
+    Default = false,
+    Callback = function(state)
+        fpsEnabled = state
+
+        if state then
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.Material = Enum.Material.Plastic
+                elseif obj:IsA("ParticleEmitter")
+                    or obj:IsA("Trail")
+                    or obj:IsA("Smoke")
+                    or obj:IsA("Fire")
+                    or obj:IsA("Sparkles") then
+                    obj.Enabled = false
+                end
+            end
+
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 2
+        else
+            -- คืนค่าแสงพื้นฐาน
+            Lighting.Brightness = original.Brightness
+            Lighting.GlobalShadows = original.GlobalShadows
+        end
+    end
+})
